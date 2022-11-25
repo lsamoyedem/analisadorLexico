@@ -1,4 +1,4 @@
-package analizadorLexico;
+package analisadorLexico;
 
 import java.util.ArrayList;
 import java.util.List;
