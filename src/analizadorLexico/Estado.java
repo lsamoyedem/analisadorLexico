@@ -1,4 +1,4 @@
-package automato;
+package analizadorLexico;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,6 +18,12 @@ public class Estado {
     public Estado(int numero, char letra) {
         this.numero = numero;
         this.letra = letra;
+    }
+
+    public Estado(int numero, char letra, boolean estadoInical) {
+        this.numero = numero;
+        this.letra = letra;
+        this.estadoInical = estadoInical;
     }
 
     public int getNumero() {
