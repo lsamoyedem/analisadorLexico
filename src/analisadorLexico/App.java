@@ -1,7 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
- */
 package analisadorLexico;
 
 import java.awt.Color;
@@ -23,7 +19,6 @@ public class App extends javax.swing.JFrame {
     private Estado estadoAtual = null;
     private Estado estadoInicial = null;
     private boolean valido;
-    private char ultimaLetraDigitada;
     private List<Estado> estadosAnteriores = new ArrayList<>();
     private Map<Character, Integer> letraxColuna = new HashMap<>();
 
@@ -60,8 +55,13 @@ public class App extends javax.swing.JFrame {
                 tokensActionPerformed(evt);
             }
         });
+        tokens.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                tokensKeyPressed(evt);
+            }
+        });
 
-        jLabel1.setText("Digite os tokens");
+        jLabel1.setText("Digite os tokens (separados por espaço)");
 
         table.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
@@ -284,7 +284,7 @@ public class App extends javax.swing.JFrame {
                     .addComponent(tokens, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(montaAnalisador)
                     .addComponent(limpar))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 31, Short.MAX_VALUE)
+                .addGap(31, 31, 31)
                 .addComponent(jLabel2)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
@@ -390,37 +390,60 @@ public class App extends javax.swing.JFrame {
         char token = evt.getKeyChar();
         if (token == '') {
             if (estadosAnteriores.isEmpty()) {
+                return;
+            }
+            estadosAnteriores.remove(estadosAnteriores.size() - 1);
+            if (estadosAnteriores.isEmpty()) {
                 estadoAtual = estadoInicial;
-            } else {
-                Estado estadoAtualAux = estadosAnteriores.get(estadosAnteriores.size() - 1);
-                if (valido) {
-                    estadosAnteriores.remove(estadoAtualAux);
-                    estadoAtual = estadoAtualAux;
-                    //  colorirLinha();
-                } else {
-                    token = validador.getText().charAt(validador.getText().length() - 2);
+                colorirLinha(1000, 1000);
+                return;
+            }
+            Estado estadoApagado = estadosAnteriores.get(estadosAnteriores.size() - 1);
+            if (estadoApagado != null) {
+                if (estadoApagado.getLetra() == ' ') {
+                    estadoAtual = estadoInicial;
+                    return;
                 }
+
+                if (estadoApagado.isValido()) {
+                    estadoAtual = estadoApagado;
+                    Estado estadoLinha;
+                    if (estadosAnteriores.size() < 2) {
+                        estadoLinha = estadoInicial;
+                    } else {
+                        estadoLinha = estadosAnteriores.get(estadosAnteriores.size() - 2);
+                    }
+                    Integer linha = estadoLinha.getNumero();
+                    Integer coluna = letraxColuna.get(estadoAtual.getLetra());
+                    if (coluna != null) {
+                        colorirLinha(linha, coluna);
+                    }
+                }
+                return;
             }
         }
-        if (token == ' ') {
-            if (estadoAtual.isEstadoFinal()) {
+        boolean ultimoEstadoValido = estadosAnteriores.isEmpty() || estadosAnteriores.get(estadosAnteriores.size() - 1).isValido();
+        if (Character.isWhitespace(token)) {
+            estadosAnteriores.add(new Estado(token, true));
+            if (estadoAtual.isEstadoFinal() && ultimoEstadoValido) {
                 mensagem.setText("Tolken Valido");
                 mensagem.setForeground(Color.GREEN);
-                estadoAtual = estadoInicial;
             } else {
                 mensagem.setText("Tolken Invalido");
                 mensagem.setForeground(Color.RED);
             }
+            estadoAtual = estadoInicial;
+            colorirLinha(0, 0);
             return;
         }
         Integer linha = null;
         Integer coluna = null;
         Estado estadoSelecionado = estadoAtual.getProximoEstado(token);
-        if (estadoSelecionado != null) {
+        if (estadoSelecionado != null && ultimoEstadoValido) {
             linha = estadoAtual.getNumero();
             coluna = letraxColuna.get(estadoSelecionado.getLetra());
             if (estadoAtual != null) {
-                estadosAnteriores.add(estadoAtual);
+                estadosAnteriores.add(estadoSelecionado);
             }
             estadoAtual = estadoSelecionado;
             valido = true;
@@ -432,13 +455,14 @@ public class App extends javax.swing.JFrame {
             mensagem.setText("Tolken Invalido");
             mensagem.setForeground(Color.RED);
             valido = false;
+            estadosAnteriores.add(new Estado(token, false));
         }
         if (linha != null && coluna != null) {
             colorirLinha(linha, coluna);
         }
     }//GEN-LAST:event_validadorKeyPressed
 
-    private void colorirLinha(int linha, int coluna) {
+    private void colorirLinha(int linhaDigit, int colunaDigit) {
         table.updateUI();
         table.setShowGrid(true);
         final Color colorPadrao = table.getBackground();
@@ -448,8 +472,11 @@ public class App extends javax.swing.JFrame {
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                 setHorizontalAlignment(JLabel.CENTER);
                 final Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                if (row == linha && column == coluna) {
-                    setBackground(Color.green);
+                if (row == linhaDigit && column == colunaDigit) {
+                    setBackground(Color.gray);
+                    setForeground(Color.WHITE);
+                } else if (estadoAtual != null && estadoAtual.getNumero() == row) {
+                    setBackground(Color.lightGray);
                     setForeground(Color.BLACK);
                 } else {
                     setBackground(colorPadrao);
@@ -468,6 +495,8 @@ public class App extends javax.swing.JFrame {
     private void limparActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_limparActionPerformed
         tokens.setText(null);
         validador.setText(null);
+        validador.setEnabled(false);
+        estadosAnteriores.clear();
         for (int i = 0; i < 99; i++) {
             for (int j = 0; j < 27; j++) {
                 table.setValueAt(null, i, j);
@@ -475,6 +504,15 @@ public class App extends javax.swing.JFrame {
         }
         colorirLinha(1000, 1000);
     }//GEN-LAST:event_limparActionPerformed
+
+    private void tokensKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_tokensKeyPressed
+        char c = evt.getKeyChar();
+        if (Character.isLetter(c) || Character.isWhitespace(c) || Character.isISOControl(c)) {
+            tokens.setEditable(true);
+        } else {
+            tokens.setEditable(false);
+        }
+    }//GEN-LAST:event_tokensKeyPressed
 
     /**
      * @param args the command line arguments

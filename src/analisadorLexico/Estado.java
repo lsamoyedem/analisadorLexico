@@ -14,16 +14,25 @@ public class Estado {
     private boolean estadoInical;
     private boolean estadoFinal;
     private List<Estado> proximosEstados = new ArrayList<>();
+    private boolean valido;
 
     public Estado(int numero, char letra) {
         this.numero = numero;
         this.letra = letra;
+        this.valido = true;
     }
 
     public Estado(int numero, char letra, boolean estadoInical) {
         this.numero = numero;
         this.letra = letra;
         this.estadoInical = estadoInical;
+        this.valido = true;
+    }
+
+    public Estado(char letra, boolean valido) {
+        this.numero = 0;
+        this.letra = letra;
+        this.valido = valido;
     }
 
     public int getNumero() {
@@ -64,6 +73,14 @@ public class Estado {
 
     public void setEstadoFinal(boolean estadoFinal) {
         this.estadoFinal = estadoFinal;
+    }
+
+    public boolean isValido() {
+        return valido;
+    }
+
+    public void setValido(boolean valido) {
+        this.valido = valido;
     }
 
     public String getDescricaoEstado() {
